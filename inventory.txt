@@ -1,0 +1,3 @@
+product_name|price|quantity|expiry_days|inventory_date|expiry_date|category
+Mutton|1000|1|5|2025-01-01|2025-01-06|Meat
+Milk|100|1|3|2025-01-02|2025-01-05|Dairy

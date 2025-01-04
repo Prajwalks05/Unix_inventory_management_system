@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Supermarket Inventory</title>
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        .category-section {
+            margin-top: 20px;
+            padding: 10px;
+            background-color: #f8f9fa;
+            border: 1px solid #dee2e6;
+            border-radius: 0.375rem;
+        }
+
+        .category-header {
+            font-size: 1.5rem;
+            font-weight: bold;
+            padding: 10px;
+            background-color: #007bff;
+            color: #fff;
+            border-radius: 0.375rem;
+        }
+
+        .no-items {
+            font-size: 1.25rem;
+            color: #6c757d;
+            margin: 10px;
+        }
+
+        .product-card {
+            margin: 0 10px;
+            min-width: 250px;
+        }
+
+        .products-container {
+            display: flex;
+            overflow-x: auto;
+            padding: 10px 0;
+        }
+
+        .products-container::-webkit-scrollbar {
+            height: 10px;
+        }
+
+        .products-container::-webkit-scrollbar-thumb {
+            background: #007bff;
+            border-radius: 5px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container my-5">
+        <h1 class="text-center mb-4">Supermarket Inventory</h1>
+
+        <!-- Categories and their products -->
+        <div id="categoryCards"></div>
+    </div>
+
+    <!-- Bootstrap JS Bundle with Popper -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+
+    <script>
+        // Function to fetch and parse the inventory file
+        async function loadInventory() {
+            try {
+                const response = await fetch('inventory.txt');
+                if (!response.ok) throw new Error(`HTTP error! Status: ${response.status}`);
+
+                const data = await response.text();
+                const products = parseInventory(data);
+                renderCategories(products);
+            } catch (error) {
+                console.error('Error loading inventory:', error);
+                document.getElementById('categoryCards').innerHTML = 
+                    `<p class="text-danger">Failed to load inventory: ${error.message}</p>`;
+            }
+        }
+
+        // Function to parse inventory data
+        function parseInventory(data) {
+            const lines = data.trim().split('\n');
+            const headers = lines[0].split('|').map(header => header.trim());
+            return lines.slice(1).map(line => {
+                const values = line.split('|').map(value => value.trim());
+                const product = {};
+                headers.forEach((header, index) => {
+                    product[header] = values[index];
+                });
+                return product;
+            });
+        }
+
+        // Function to render categories with their product cards
+        function renderCategories(products) {
+            const container = document.getElementById('categoryCards');
+
+            // Group products by category (the last field in each line is the category)
+            const categories = {};
+
+            products.forEach(product => {
+                const category = product['category']; // category field in the last position
+                if (!categories[category]) {
+                    categories[category] = [];
+                }
+                categories[category].push(product);
+            });
+
+            // Predefined order of categories (optional)
+            const predefinedOrder = ['Dairy', 'Bakery', 'Grocery', 'Fruits', 'Meat'];
+
+            // Iterate over predefined categories and render the section
+            predefinedOrder.forEach(category => {
+                const sectionDiv = document.createElement('div');
+                sectionDiv.className = 'category-section';
+
+                // Add category heading
+                const categoryHeading = document.createElement('div');
+                categoryHeading.className = 'category-header';
+                categoryHeading.textContent = category;
+                sectionDiv.appendChild(categoryHeading);
+
+                // Add product cards or placeholder
+                const productContainer = document.createElement('div');
+                productContainer.className = 'products-container';
+
+                if (categories[category] && categories[category].length > 0) {
+                    categories[category].forEach(product => {
+                        const cardDiv = document.createElement('div');
+                        cardDiv.className = 'card shadow product-card';
+                        cardDiv.innerHTML = `
+                            <div class="card-body">
+                                <h5 class="card-title text-primary">${product['product_name']}</h5>
+                                <ul class="list-group list-group-flush">
+                                    <li class="list-group-item"><strong>Price:</strong> Rs.${product['price']}</li>
+                                    <li class="list-group-item"><strong>Quantity:</strong> ${product['quantity']}</li>
+                                    <li class="list-group-item"><strong>Expiry Days:</strong> ${product['expiry_days']}</li>
+                                    <li class="list-group-item"><strong>Inventory Date:</strong> ${product['inventory_date']}</li>
+                                    <li class="list-group-item"><strong>Expiry Date:</strong> ${product['expiry_date']}</li>
+                                </ul>
+                            </div>
+                        `;
+                        productContainer.appendChild(cardDiv);
+                    });
+                } else {
+                    // No items placeholder
+                    const noItemsDiv = document.createElement('div');
+                    noItemsDiv.className = 'no-items';
+                    noItemsDiv.textContent = 'No items available';
+                    productContainer.appendChild(noItemsDiv);
+                }
+
+                // Append product container to section
+                sectionDiv.appendChild(productContainer);
+
+                // Append section to main container
+                container.appendChild(sectionDiv);
+            });
+        }
+
+        // Load the inventory on page load
+        document.addEventListener('DOMContentLoaded', loadInventory);
+    </script>
+</body>
+</html>
